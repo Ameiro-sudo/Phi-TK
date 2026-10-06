@@ -108,6 +108,20 @@ jobs:
           tar -xf prpr-avc-static-lib.tar.gz -C static-lib
           Get-ChildItem -Recurse static-lib | Select-Object -First 20 FullName, Length
 
+      # Two copies of macroquad in one graph only surface at the very end of a
+      # 20 minute build, as "found a different macroquad::texture::RenderTarget".
+      # Fail in seconds instead.
+      - name: Exactly one macroquad / miniquad in the graph
+        shell: pwsh
+        run: |
+          cargo metadata --format-version 1 --locked --manifest-path src-tauri/Cargo.toml | Out-File -Encoding utf8 meta.json
+          $m = Get-Content meta.json -Raw | ConvertFrom-Json
+          foreach ($n in @('macroquad','macroquad_macro','miniquad')) {
+            $hits = @($m.packages | Where-Object { $_.name -eq $n })
+            if ($hits.Count -ne 1) { Write-Error "duplicate $n in graph: $($hits.source -join ' , ')"; exit 1 }
+            Write-Host "$n -> $($hits[0].source)"
+          }
+
       - name: Build the app
         uses: tauri-apps/tauri-action@v0
         with:
