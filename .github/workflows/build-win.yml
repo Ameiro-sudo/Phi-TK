@@ -39,13 +39,12 @@ jobs:
         with:
           toolchain: stable-x86_64-gnu
           components: rustfmt
-      - name: cargo fmt --check (ported files only)
+      - name: rustfmt --check (ported files only)
         working-directory: render-lib
-        # Only the files this fork adds or rewrites. rustfmt follows `mod`
-        # declarations, so listing chart.rs / game.rs would pull the whole
-        # pre-existing tree in, which is not rustfmt-clean upstream.
+        # `cargo fmt` walks the whole workspace and dies on this fork's
+        # pre-existing `mod inner;` declarations, so call rustfmt directly.
         run: |
-          cargo fmt --check -- \
+          rustfmt --edition 2021 --check \
             prpr/src/core/block.rs prpr/src/core/block_mask.rs prpr/src/core/block_shader.rs \
             prpr/src/core/block_simple.rs prpr/src/core/block_support.rs \
             prpr/src/core/block_timeline.rs prpr/src/core/block_touch.rs
