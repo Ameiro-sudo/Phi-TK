@@ -1,20 +1,83 @@
 name: Phi-TK noise build (Windows only)
 
+# Iteration cost control:
+#   * `cache-on-failure: true` is the single biggest win. swatinem/rust-cache's
+#     post-if is `success() || env.CACHE_ON_FAILURE == 'true'`, so without it a
+#     FAILED run never writes the cache and every retry recompiles ~120 crates
+#     from scratch (~13 min each).
+#   * the `check` job type-checks only the crate we ported into (`-p prpr`,
+#     workspace selection, `--locked`), so type errors surface in ~2-4 min and
+#     the expensive tauri/packaging leg is skipped entirely (needs: check).
+#   * `fmt` runs in parallel and costs seconds; no compile at all.
+#   * locally the same loop is `Phigros\_work\rust_check.ps1` (real toolchain
+#     installed at C:\rust), so usually nothing has to round-trip to CI.
+
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - 'noise-build'
+    inputs:
+      full:
+        description: 'Run the real installer build (otherwise only check + fmt)'
+        type: boolean
+        default: true
 
 concurrency:
   group: windows-noise-build
   cancel-in-progress: true
 
 jobs:
+  fmt:
+    name: fmt
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: Ameiro-sudo/Phi-TK-render-lib
+          ref: render-lib
+          path: render-lib
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable-x86_64-gnu
+          components: rustfmt
+      - name: cargo fmt --check (ported files only)
+        working-directory: render-lib
+        run: |
+          cargo fmt --check -- \
+            prpr/src/core/block.rs prpr/src/core/block_zone.rs prpr/src/core/block_simple.rs \
+            prpr/src/core/block_timeline.rs prpr/src/core/chart.rs \
+            prpr/src/parse/pgr.rs prpr/src/scene/game.rs
+
+  check:
+    name: check (prpr only)
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: Ameiro-sudo/Phi-TK-render-lib
+          ref: render-lib
+          path: render-lib
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable-x86_64-gnu
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: 'render-lib -> target'
+          cache-all-crates: "true"
+          cache-on-failure: "true"
+      - name: Extract in-tree static-lib (prpr-avc build.rs only emits link-search)
+        shell: pwsh
+        run: New-Item -ItemType Directory -Force -Path render-lib/prpr-avc/static-lib | Out-Null
+      - name: cargo check -p prpr --lib --locked
+        working-directory: render-lib
+        run: cargo check --locked -p prpr --lib --message-format short
+
   build:
+    name: build (installer)
+    needs: [fmt, check]
     runs-on: windows-latest
     timeout-minutes: 90
-
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.full }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -29,6 +92,7 @@ jobs:
         with:
           workspaces: './src-tauri -> target'
           cache-all-crates: "true"
+          cache-on-failure: "true"
 
       - name: Sync node version and setup cache
         uses: pnpm/action-setup@v4
@@ -59,7 +123,7 @@ jobs:
           if-no-files-found: error
           path: |
             src-tauri/target/release/bundle/msi/*.msi
-            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/nsis/*.exe
 
       - name: Upload raw exe + logs
         uses: actions/upload-artifact@v4
