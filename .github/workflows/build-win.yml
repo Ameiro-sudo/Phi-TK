@@ -125,7 +125,10 @@ jobs:
             src-tauri/target/release/bundle/msi/*.msi
             src-tauri/target/release/nsis/*.exe
 
-      - name: Upload raw exe + logs
+      # WebView2Loader.dll MUST travel with the loose exe: without it the exe
+      # dies instantly with STATUS_DLL_NOT_FOUND (0xC0000135).  The installers
+      # bundle it themselves, which is why the msi/nsis always worked.
+      - name: Upload raw exe + WebView2Loader + logs
         uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -133,4 +136,5 @@ jobs:
           if-no-files-found: ignore
           path: |
             src-tauri/target/release/*.exe
+            src-tauri/target/release/*.dll
             src-tauri/target/release/bundle/nsis/**/*.log
