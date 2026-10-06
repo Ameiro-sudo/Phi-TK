@@ -41,13 +41,10 @@ jobs:
           components: rustfmt
       - name: rustfmt --check (ported files only)
         working-directory: render-lib
-        # `cargo fmt` walks the whole workspace and dies on this fork's
-        # pre-existing `mod inner;` declarations, so call rustfmt directly.
-        run: |
-          rustfmt --edition 2021 --check \
-            prpr/src/core/block.rs prpr/src/core/block_mask.rs prpr/src/core/block_shader.rs \
-            prpr/src/core/block_simple.rs prpr/src/core/block_support.rs \
-            prpr/src/core/block_timeline.rs prpr/src/core/block_touch.rs
+        # One line: a trailing backslash is not a continuation in PowerShell.
+        # `cargo fmt` is not usable here either — it walks the whole workspace
+        # and dies on this fork's pre-existing `mod inner;` declarations.
+        run: rustfmt --edition 2021 --check prpr/src/core/block.rs prpr/src/core/block_mask.rs prpr/src/core/block_shader.rs prpr/src/core/block_simple.rs prpr/src/core/block_support.rs prpr/src/core/block_timeline.rs prpr/src/core/block_touch.rs
 
   check:
     name: check (prpr only)
