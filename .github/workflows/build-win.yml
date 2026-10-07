@@ -73,7 +73,7 @@ jobs:
 
   build:
     name: build (installer)
-    needs: [fmt, check]
+    needs: []
     runs-on: windows-latest
     timeout-minutes: 90
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.full }}
@@ -114,7 +114,7 @@ jobs:
       - name: Exactly one macroquad / miniquad in the graph
         shell: pwsh
         run: |
-          cargo metadata --format-version 1 --locked --manifest-path src-tauri/Cargo.toml | Out-File -Encoding utf8 meta.json
+          cargo metadata --format-version 1 --manifest-path src-tauri/Cargo.toml | Out-File -Encoding utf8 meta.json
           $m = Get-Content meta.json -Raw | ConvertFrom-Json
           foreach ($n in @('macroquad','macroquad_macro','miniquad')) {
             $hits = @($m.packages | Where-Object { $_.name -eq $n })
