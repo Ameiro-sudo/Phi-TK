@@ -4855,7 +4855,7 @@ checksum = "3d595e54a326bc53c1c197b32d295e14b169e3cfeaa8dc82b529f947fba6bcf5"
 [[package]]
 name = "prpr"
 version = "0.4.0"
-source = "git+https://github.com/Ameiro-sudo/Phi-TK-render-lib?branch=render-lib#1ea5be3a13f069a55f9ee4b81a154a5206258485"
+source = "git+https://github.com/Ameiro-sudo/Phi-TK-render-lib?branch=render-lib#f6b76b78310764a1c4eb3525cc14572760377aca"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -4936,7 +4936,7 @@ dependencies = [
 [[package]]
 name = "prpr-avc"
 version = "0.1.0"
-source = "git+https://github.com/Ameiro-sudo/Phi-TK-render-lib?branch=render-lib#1ea5be3a13f069a55f9ee4b81a154a5206258485"
+source = "git+https://github.com/Ameiro-sudo/Phi-TK-render-lib?branch=render-lib#f6b76b78310764a1c4eb3525cc14572760377aca"
 dependencies = [
  "anyhow",
  "tracing",
